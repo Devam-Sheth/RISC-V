@@ -3,6 +3,7 @@ module hazard_unit (
     input [6:0] if_id_opcode,
     input [4:0] id_ex_rd,
     input id_ex_mem_read,
+    input id_ex_reg_write,
     input id_ex_branch, id_ex_jump, id_ex_jalr,
     input [4:0] ex_mem_rd,
     input ex_mem_reg_write,
