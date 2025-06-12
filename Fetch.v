@@ -1,30 +1,3 @@
-/*module fetch(input clk, 
-             input reset,
-			 output reg [31:0] pc,
-             output [31:0] instr
-            );
-			
-			
-     instrmem mem(
-		.inaddr(pc[6:2]),
-		.instr(instr)
-	 );
-
-
-	//pipeline register
-	reg 	
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            pc <= 32'd0; 
-        end 
-        else begin
-             pc <= pc + 4; 
-          end
-    end
-        
-    endmodule*/ 
-
-// Jump Branch logic not taken into account, updated code:
 module pc_wire (
     input clk, reset,
     input taken_br, is_jal, is_jalr,
