@@ -37,7 +37,8 @@ module Riscv_Top (
 	wire [31:0] rs2_data_in;// imm_in,
     //input [31:0] pc_in, pc_plus_4_in,
     //input [4:0] rs1_addr_in, rs2_addr_in, rd_addr_in,
-    //wire [31:0] rs1_data_out, rs2_data_out, imm_out,
+	wire [31:0] rs1_data_out;
+	wire [31:0]rs2_data_out;// imm_out,
     //wire [31:0] pc_out, pc_plus_4_out,
     //wire [4:0] rs1_addr_out, rs2_addr_out, rd_addr_out,
 	wire reg_write_out;
@@ -130,7 +131,8 @@ module Riscv_Top (
     .reset(reset),
     .stall(stall),
     .flush(flush),
-    //input [31:0] rs1_data_in, rs2_data_in, imm_in,
+    .rs1_data_in(rs1_data_in),
+    .rs2_data_in(rs2_data_in), //imm_in,
     //input [31:0] pc_in, pc_plus_4_in,
     //input [4:0] rs1_addr_in, rs2_addr_in, rd_addr_in,
     .reg_write_in(reg_write), 
@@ -151,7 +153,8 @@ module Riscv_Top (
     .sel_r_in(sel_r),
     .is_lui_in(is_lui),
     .is_auipc_in(is_auipc),
-    //wire [31:0] rs1_data_out, rs2_data_out, imm_out,
+    .rs1_data_out(rs1_data_out),
+    .rs2_data_out(rs2_data_out),// imm_out,
     //output reg [31:0] pc_out, pc_plus_4_out,
     //output reg [4:0] rs1_addr_out, rs2_addr_out, rd_addr_out,
     .reg_write_out(reg_write_out),
@@ -183,7 +186,7 @@ module Riscv_Top (
 );
 
   rv32i_ex EX(
-    //input [31:0] rs1_d, rs2_d, imm_d, pc_d, pc_plus_4,
+    .rs1_d, rs2_d,// imm_d, pc_d, pc_plus_4,
     //input [4:0] rs1_addr, rs2_addr,
     .op_a(op_a_out),
     .op_s(op_s_out),
