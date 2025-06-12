@@ -66,7 +66,6 @@ module rv32i_ex (
     input [1:0] sel_r,
     input [2:0] bra_c,
     input b_rs1_pc, use_imm,
-    input is_mul, is_rsqr,
     input branch, jump, jalr,
     input is_lui, is_auipc,
     
@@ -101,6 +100,11 @@ module rv32i_ex (
     // Select between rs2 and immediate
     assign rs2i_d = use_imm ? imm_d : forwarded_rs2;
 
+    assign product = $signed(forwarded_rs1) * $signed(rs2i_d);
+    assign mul_result = product[31:0];
+    assign square = $signed(forwarded_rs1) * $signed(forwarded_rs1);
+    assign rsqr_result = square[31:0];
+
     // Arithmetic operations
     always @(*) begin
         case (op_a)
@@ -120,6 +124,10 @@ module rv32i_ex (
                 res_d_op_a_33 = forwarded_rs1 - rs2i_d;
                 res_d_op_a_32 = {31'b0, res_d_op_a_33[32]};
             end
+            4'b0100: begin // rsqr
+                res_d_op_a_32 = rsqr_result;
+            4'b0101: begin // mul
+                res_d_op_a_32 = mul_result;
             default: begin
                 res_d_op_a_33 = forwarded_rs1 + rs2i_d;
                 res_d_op_a_32 = res_d_op_a_33[31:0];
@@ -163,12 +171,6 @@ module rv32i_ex (
         branch_taken = branch & branch_taken;
     end
 
-    // MUL and RSQR operations
-    assign product = $signed(forwarded_rs1) * $signed(rs2i_d);
-    assign mul_result = product[31:0];
-    assign square = $signed(forwarded_rs1) * $signed(forwarded_rs1);
-    assign rsqr_result = square[31:0];
-
     // Main ALU result selection
     always @(*) begin
         if (is_lui) begin
@@ -182,8 +184,6 @@ module rv32i_ex (
         end
         else begin
             case (sel_r)
-                2'b00: alu_result = is_mul ? mul_result :
-                                   is_rsqr ? rsqr_result : res_d_op_a_32;
                 2'b01: alu_result = res_d_op_l_32;
                 2'b10: alu_result = res_d_op_s_32;
                 2'b11: alu_result = imm_d;  // Direct immediate
