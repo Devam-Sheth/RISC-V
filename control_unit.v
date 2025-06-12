@@ -9,7 +9,6 @@ module control_unit (
     output reg branch, jump, jalr, 
     output reg b_rs1_pc,      // 0: rs1+offset, 1: pc+offset for branches
     output reg use_imm,       // 0: use rs2, 1: use immediate
-    output reg is_mul, is_rsqr,
     output reg [3:0] op_a,          // Arithmetic operations
     output reg [2:0] op_l,          // Logical operations  
     output reg [3:0] op_s,          // Shift operations
@@ -51,11 +50,7 @@ module control_unit (
                 case (funct3)
                     3'b000: begin
                         if (funct7 == 7'b0000001) begin
-                            is_mul = 1'b1;           // MUL
-                            sel_r = 2'b00;
-                        end
-                        else if (funct7 == 7'b0000010) begin
-                            is_rsqr = 1'b1;          // RSQR (custom instruction)
+                            op_a = 4'b0101;           // MUL
                             sel_r = 2'b00;
                         end
                         else if (funct7 == 7'b0100000) begin
@@ -97,6 +92,18 @@ module control_unit (
                     3'b111: begin
                         op_l = 3'b111;               // AND
                         sel_r = 2'b01;
+                    end
+                endcase
+            end
+
+            7'b0001011: begin //rsqr
+                reg_write = 1'b1;
+                case(funct3)
+                    3'b001: begin
+                        if (funct7==7'b0000010) begin
+                            op_a = 4'b0100;
+                            sel_r = 2'b00;
+                        end
                     end
                 endcase
             end
@@ -235,8 +242,6 @@ module control_unit (
             end
             
             default: begin
-                // All signals remain at default (inactive) values
-                // This handles undefined opcodes gracefully
             end
         endcase
     end
