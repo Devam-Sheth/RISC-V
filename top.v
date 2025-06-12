@@ -33,7 +33,8 @@ module Riscv_Top (
     	wire is_auipc;
     	wire stall;
     	wire flush;
-    //input [31:0] rs1_data_in, rs2_data_in, imm_in,
+	wire [31:0] rs1_data_in;
+	wire [31:0] rs2_data_in;// imm_in,
     //input [31:0] pc_in, pc_plus_4_in,
     //input [4:0] rs1_addr_in, rs2_addr_in, rd_addr_in,
     //wire [31:0] rs1_data_out, rs2_data_out, imm_out,
@@ -271,7 +272,7 @@ module Riscv_Top (
 					//input [4:0] rd,
 					//input regwrite,
 	    .datain(wb_data),
-					.rs1_data,
-					.rs2_data
+	    .rs1_data(rs1_data_in),
+	    .rs2_data(rs2_data_in)
 					);
 	
