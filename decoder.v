@@ -39,7 +39,7 @@ module Decoder(
 		
 	
         casez (opcode)
-            7'b0110011: begin im = 32'b0; end     																	//R-type
+            7'b0110011,7'b0001011: begin im = 32'b0; end     //added opcode for rsqr																	//R-type
 			7'b0010011, 7'b0000011, 7'b1100111: begin    															//I-type
             case (f3)
                 3'b001: begin // slli
