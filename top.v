@@ -1,3 +1,97 @@
+/*module Risc-v(
+	input start,
+	input reset,
+	input clk,
+	input [31:0]pc
+	);
+	
+	reg [31:0]program_counter;
+	wire [31:0] instruction;
+
+	wire [31:0] memin;
+	wire [31:0] memout;
+	wire memaccess;
+	wire [4:0] rs1, rs2, rd;
+	wire [31:0] im;
+	wire [31:0] rs1_data, rs2_data, rd_data;
+	wire [2:0] op_type;
+	wire [1:0] immctrl;
+	wire branch_en, jump_en;
+	wire [4:0] op;
+	wire [1:0] size;
+
+
+	Memory imem(
+		.clk(clk),
+	.Memread(1'b1),
+	.Memwrite(1'b0),
+	.memaccess(memaccess),
+	.size(size), 
+	.Memaddr(program_counter), 
+	.datain(Memin),
+	.dataout(Memout)
+	);
+	
+	
+	ControlUnit cu (
+    .opcode(opcode),
+    .funct3(f3),
+    .funct7(f7),
+    .branch_en(branch_en),
+    .jump_en(jump_en),
+    .memaccess(memaccess),
+    .size(size),
+    .op(op),
+    .op_type(op_type)
+	);
+		
+
+	Fetch fetch(
+		.clk(clk),
+		.reset(reset), 
+		.pc(program_counter),
+		.instr(instruction)
+	);
+
+	Decoder decoder(
+		.instr(instruction),
+		.clk(clk),
+		.rs1(rs1),
+		.rs2(rs2),
+		.im(im),
+		.rd(rd),
+		.opcode(opcode),
+		.f3(f3),
+		.f7(f7)
+	);
+
+	ALU alu(
+		.clk(clk),
+		.rs1(rs1_data), 
+		.imm(im),
+		.rs2(rs2_data), 
+		.op_type(op_type),
+		.immctrl(immctrl),
+		.memaccess(memaccess),
+		.op(op), 
+		.rd(rd_data) 
+	);
+
+	
+	always @(posedge clk) begin
+		if (start) begin
+			program_counter <= 32'd0; // Reset PC to 0 on start signal
+		end else if (branch_en || jump_en) begin
+			program_counter <= program_counter + im; // Update PC based on branch or jump instruction
+		end else begin
+			program_counter <= program_counter + 4; // Increment PC by 4 for next instruction
+		end
+	end
+
+		
+	
+	endmodule */
+
 module Riscv_Top (
     input clk,
     input reset
@@ -37,21 +131,27 @@ module Riscv_Top (
 	wire [31:0] rs1_data_in;
 	wire [31:0] rs2_data_in;
 	wire [31:0] pc_in, //pc_plus_4_in, // remove pc_plus_4 in every code ig
-    //input [4:0] rs1_addr_in, rs2_addr_in, rd_addr_in,
 	wire [31:0] rs1_data_out;
 	wire [31:0] rs2_data_out;
-	wire [31:0] imm_out,
+	wire [31:0] rs2_data_out1;
+	wire [31:0] imm_out;
     //wire [31:0] pc_out, pc_plus_4_out,
-    //wire [4:0] rs1_addr_out, rs2_addr_out, rd_addr_out,
-	wire reg_write_out;
-	wire mem_read_out;
-	wire mem_write_out;
-	wire mem_to_reg_out;
-	wire [1:0] access_sz_out;
-        wire s_us_out;
+	wire [4:0] rs1_addr_out;
+	wire [4:0] rs2_addr_out;
+	wire [4:0] rd_addr_out,rd_addr_out1;
+	wire reg_write_out,
+	wire reg_write_out1;
+	wire mem_read_out,
+	wire mem_read_out1;
+	wire mem_write_out,
+	wire mem_write_out1;
+	wire mem_to_reg_out,
+	wire mem_to_reg_out1;
+	wire [1:0] access_sz_out,access_sz_out1;
+        wire s_us_out,s_us_out1;
         wire branch_out;
-        wire jump_out;
-        wire jalr_out;
+        wire jump_out,jump_out1;
+        wire jalr_out,jalr_out1;
         wire b_rs1_pc_out;
         wire use_imm_out;
 	wire [3:0] op_a_out;
@@ -77,7 +177,6 @@ module Riscv_Top (
 	wire [31:0] branch_target_out;
     //wire [4:0]  rd_addr_out,
         wire branch_taken_out;
-    //wire reg_write_out, mem_read_out, mem_write_out, mem_to_reg_out,
     //wire [1:0] access_sz_out,
     //wire s_us_out, jump_out, jalr_out //take care of the above 3 first and ex_mem_reg also
 	wire [31:0]dataout;
@@ -110,7 +209,7 @@ module Riscv_Top (
 	Decoder ID( 
 	    .instr(instr),
 	    .clk(clk),
-		//input [31:0]rs1_datain,
+		//input [31:0]rs1_datain, // these two commented lines are not required ig
 		//input [31:0]rs2_datain,
 	    .rs1_dataout(rs1_data),
 	    .rs2_dataout(rs2_data),
@@ -156,7 +255,9 @@ module Riscv_Top (
 	    .rs2_data_in(rs2_data_in),
 	    .imm_in(imm_val),
 	    //input [31:0] pc_in, pc_plus_4_in,
-	    //input [4:0] rs1_addr_in, rs2_addr_in, rd_addr_in,
+	    .rs1_addr_in(rs1),
+	    .rs2_addr_in(rs2),
+	    .rd_addr_in(rd),
 	    .reg_write_in(reg_write), 
 	    .mem_read_in(mem_read),
 	    .mem_write_in(mem_write),
@@ -179,7 +280,9 @@ module Riscv_Top (
 	    .rs2_data_out(rs2_data_out), 
 	    .imm_out(imm_out),
 	    //output reg [31:0] pc_out, pc_plus_4_out,
-	    //output reg [4:0] rs1_addr_out, rs2_addr_out, rd_addr_out,
+	    .rs1_addr_out(rs1_addr_out),
+	    .rs2_addr_out(rs2_addr_out),
+	    .rd_addr_out(rd_addr_out),
 	    .reg_write_out(reg_write_out),
 	    .mem_read_out(mem_read_out),
 	    .mem_write_out(.mem_write_out),
@@ -200,11 +303,13 @@ module Riscv_Top (
 	    .is_auipc_out(is_auipc_out)
 	);
 	
-	forwarding_unit FU(
-	    //input [4:0] id_ex_rs1, id_ex_rs2,
-	    //input [4:0] ex_mem_rd, mem_wb_rd,
-	    //input       ex_mem_reg_write,
-	    //input       mem_wb_reg_write,
+	forwarding_unit FU(      // not sure of this rn
+		.id_ex_rs1(rs1), 
+		.id_ex_rs2(rs2),
+		.ex_mem_rd(rd), 
+		.mem_wb_rd(rd),
+		.ex_mem_reg_write(reg_write),
+		.mem_wb_reg_write(reg_write),
 	    .forward_a(forward_a), .forward_b(forward_b)
 	);
 	
@@ -212,7 +317,8 @@ module Riscv_Top (
 	    .rs1_d(rs1_data_out), 
 	    .rs2_d(rs2_data_out), 
 	    .imm_d(imm_out),// pc_d, pc_plus_4,
-	    //input [4:0] rs1_addr, rs2_addr,
+	    .rs1_addr(rs1_addr_out),
+	    .rs2_addr(rs2_addr_out),
 	    .op_a(op_a_out),
 	    .op_s(op_s_out),
 	    .op_l(op_l_out),
@@ -234,22 +340,32 @@ module Riscv_Top (
 		  .clk(clk), .reset(reset),
 	    //input [31:0] pc_plus_4_in,
 		  .alu_result_in(alu_result),
-		  //rs2_data_in,
+		.rs2_data_in(rs2_data_out), //for store
 		  .branch_target_in(branch_target),
-	    //input [4:0]  rd_addr_in,
+		.rd_addr_in(rd_addr_out),
 		  .branch_taken_in(branch_taken), //left to add jalr_target_in
-	    //input reg_write_in, mem_read_in, mem_write_in, mem_to_reg_in,
-	    //input [1:0] access_sz_in,
-	    //input s_us_in, jump_in, jalr_in,
+		.reg_write_in(reg_write_out),
+		.mem_read_in(mem_read_out), 
+		.mem_write_in(mem_read_out), 
+		.mem_to_reg_in(mem_to_reg_out),
+		.access_sz_in(access_sz_out),
+		.s_us_in(s_us_out), 
+		.jump_in(jump_out),
+		.jalr_in(jalr_out), //branch_out left
 	    //output reg [31:0] pc_plus_4_out, 
 		  .alu_result_out(alu_result_out),
-		  //rs2_data_out,
+		.rs2_data_out(rs2_data_out1),
 		  .branch_target_out(branch_target_out),
-	    //output reg [4:0]  rd_addr_out,
+		  .rd_addr_out(rd_addr_out1),
 		  .branch_taken_out(branch_taken_out),
-	    //output reg reg_write_out, mem_read_out, mem_write_out, mem_to_reg_out,
-	    //output reg [1:0] access_sz_out,
-	    //output reg s_us_out, jump_out, jalr_out
+		.reg_write_out(reg_write_out1),
+		.mem_read_out(.mem_read_out1), 
+		.mem_write_out(mem_write_out1), 
+		.mem_to_reg_out(.mem_to_reg_out),
+		.access_sz_out(access_sz_out1),
+		.s_us_out(s_us_out1),
+		.jump_out(jump_out1), 
+		.jalr_out(jalr_out1)
 	);
 	
 	Memory DataMemory(
@@ -264,20 +380,20 @@ module Riscv_Top (
 	
 	rv32i_mem_stage (
 	    //input [31:0] dm_adr,        // data memory address (low endian)
-	    //input [1:0] access_sz,      // Byte (00), Half (01), Word (10)
-	    //input s_us,                 // signed(0) / unsigned(1) load
+		.access_sz(access_sz_out1),      // Byte (00), Half (01), Word (10)
+		.s_us(s_us_out1),                 // signed(0) / unsigned(1) load
 	    //input [31:0] sd_32,         // data to store
 	    //input [1:0] acc_type,       // read(01), write(10), else no access
 		    .ld_32(ld_32)     // data read from memory
 	);
-	
+	// sole this tomorrow memwbreg
 	mem_wb_pipeline_reg MEM_WB_REG(
 		    .clk(clk),
 	    //input [4:0]  rd_in,
 		    .alu_result_in(alu_result_out),
 		    .ld_data_in(ld_32),
 	    //input reg_write_in,
-	
+	//stalling condn is left ig
 	    //output reg [4:0]  rd_out,
 		    .alu_result_out(alu_result_out_memwbpipeline),
 		    .ld_data_out(ld_data_out),
@@ -287,17 +403,17 @@ module Riscv_Top (
 	writeback WB(
 		    .alu_result(alu_result_out_memwbpipeline),
 		    .ld_data(ld_data_out),
-	    //input mem_to_reg,
+		.mem_to_reg(mem_to_reg),
 		    .wb_data(wb_data)
 	);
 	
 	registers RegisterFile(
 		    .clk(clk),
 		    .reset(reset),
-						//input [4:0] rs1,
-						//input [4:0] rs2,
-						//input [4:0] rd,
-						//input regwrite,
+		.rs1(rs1),
+		.rs2(rs2),
+		.rd(rd),
+		.regwrite(reg_write),
 		    .datain(wb_data),
 		    .rs1_data(rs1_data_in),
 		    .rs2_data(rs2_data_in)
