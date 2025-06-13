@@ -35,6 +35,7 @@ module Riscv_Top (
     	wire stall;
     	wire id_ex_flush;     // Flush ID/EX register (insert bubble)
     	wire if_id_flush; 
+	wire if_id_write;
 	wire [31:0] rs1_data_in;
 	wire [31:0] rs2_data_in;
 	wire [31:0] pc_in, //pc_plus_4_in, // remove pc_plus_4 in every code ig
@@ -121,7 +122,7 @@ module Riscv_Top (
 		.mem_wb_rd(rd_addr_out1),
 		.mem_wb_reg_write(reg_write_out),
 		.pc_write(),        
-    //output reg if_id_write, //take care of it    // Enable IF/ID register update
+		.if_id_write(if_id_write), //take care of it    // Enable IF/ID register update
 		.id_ex_flush(id_ex_flush),     // Flush ID/EX register (insert bubble)
 		.if_id_flush(if_id_flush),     // Flush IF/ID register
 		.stall(stall)            // Overall stall signal
@@ -129,7 +130,7 @@ module Riscv_Top (
 	if_id_pipeline_reg IF_ID_REG(
 		.clk(clk),
 		.reset(reset),
-		.stall(stall),
+		.stall(~if_id_write),
 		.flush(if_id_flush),
 		.pc_in(pc), //.instr_in(instr), // remove instr_in ig
 		.pc_out(pc_in), //instr_out // remove instr_out ig
