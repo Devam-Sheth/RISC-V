@@ -238,8 +238,8 @@ module Riscv_Top (
 		.id_ex_rs2(rs2),
 		.ex_mem_rd(rd), 
 		.mem_wb_rd(rd),
-		.ex_mem_reg_write(reg_write),
-		.mem_wb_reg_write(reg_write),
+		.ex_mem_reg_write(reg_write_out1),
+		.mem_wb_reg_write(reg_write_out2),
 	    .forward_a(forward_a), .forward_b(forward_b)
 	);
 	
