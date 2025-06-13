@@ -33,7 +33,8 @@ module Riscv_Top (
     	wire is_lui;
     	wire is_auipc;
     	wire stall;
-    	wire flush;
+    	wire id_ex_flush;     // Flush ID/EX register (insert bubble)
+    	wire if_id_flush; 
 	wire [31:0] rs1_data_in;
 	wire [31:0] rs2_data_in;
 	wire [31:0] pc_in, //pc_plus_4_in, // remove pc_plus_4 in every code ig
@@ -47,6 +48,7 @@ module Riscv_Top (
 	wire [4:0] rd_addr_out,rd_addr_out1;
 	wire reg_write_out,
 	wire reg_write_out1;
+	wire reg_write_out2;
 	wire mem_read_out,
 	wire mem_read_out1;
 	wire mem_write_out,
@@ -90,7 +92,6 @@ module Riscv_Top (
     //output reg [4:0]  rd_out,
 	wire [31:0] alu_result_out_memwbpipeline;
 	wire [31:0] ld_data_out;
-    //output reg reg_write_out
 	wire [31:0] wb_data;
 
 	pc_wire IF(
@@ -103,11 +104,33 @@ module Riscv_Top (
 		.jalr_tgt_pc(jalr_target),
 		.pc(pc)
 );
+	hazard_unit HazardUnit(
+		.if_id_rs1(rs1),
+		.if_id_rs2(rs2),
+		.if_id_opcode(opcode),
+		.id_ex_rd(rd_addr_out),
+		.id_ex_mem_read(mem_read_out),
+		.id_ex_reg_write(reg_write_out),
+		.id_ex_branch(branch_out),
+		.id_ex_jump(jump_out),
+		.id_ex_jalr(jalr_out),
+		.ex_mem_rd(rd_addr_out1),
+		.ex_mem_reg_write(reg_write_out1),
+		.ex_mem_branch_taken(),
+		.ex_mem_jump(jump_out1), .ex_mem_jalr(jalr_out1),
+		.mem_wb_rd(rd_addr_out1),
+		.mem_wb_reg_write(reg_write_out),
+		.pc_write(),        
+    //output reg if_id_write, //take care of it    // Enable IF/ID register update
+		.id_ex_flush(id_ex_flush),     // Flush ID/EX register (insert bubble)
+		.if_id_flush(if_id_flush),     // Flush IF/ID register
+		.stall(stall)            // Overall stall signal
+);
 	if_id_pipeline_reg IF_ID_REG(
 		.clk(clk),
 		.reset(reset),
 		.stall(stall),
-		.flush(flush),
+		.flush(if_id_flush),
 		.pc_in(pc), //.instr_in(instr), // remove instr_in ig
 		.pc_out(pc_in), //instr_out // remove instr_out ig
 );
@@ -156,7 +179,7 @@ module Riscv_Top (
 	    .clk(clk),
 	    .reset(reset),
 	    .stall(stall),
-	    .flush(flush),
+	    .flush(id_ex_flush),
 	    .rs1_data_in(rs1_data_in),
 	    .rs2_data_in(rs2_data_in),
 	    .imm_in(imm_val),
@@ -191,7 +214,7 @@ module Riscv_Top (
 	    .rd_addr_out(rd_addr_out),
 	    .reg_write_out(reg_write_out),
 	    .mem_read_out(mem_read_out),
-	    .mem_write_out(.mem_write_out),
+	    .mem_write_out(mem_write_out),
 	    .mem_to_reg_out(mem_to_reg_out),
 	    .access_sz_out(access_sz_out),
 	    .s_us_out(s_us_out),
@@ -234,8 +257,8 @@ module Riscv_Top (
 	    .is_auipc(is_auipc_out)
 	    .forward_a(forward_a), 
 	    .forward_b(forward_b),
-	    //input [31:0] ex_mem_alu_result,
-	    //input [31:0] mem_wb_data,
+		.ex_mem_alu_result(alu_result_out),
+		.mem_wb_data(wb_data), //because it is either the alu result for arithmetic or memory data from mem
 	    .alu_result(alu_result),
 	    .branch_target(branch_target),
 	    .branch_taken(branch_taken),
@@ -267,7 +290,7 @@ module Riscv_Top (
 		.reg_write_out(reg_write_out1),
 		.mem_read_out(.mem_read_out1), 
 		.mem_write_out(mem_write_out1), 
-		.mem_to_reg_out(.mem_to_reg_out),
+		.mem_to_reg_out(.mem_to_reg_out1),
 		.access_sz_out(access_sz_out1),
 		.s_us_out(s_us_out1),
 		.jump_out(jump_out1), 
@@ -292,24 +315,24 @@ module Riscv_Top (
 	    //input [1:0] acc_type,       // read(01), write(10), else no access
 		    .ld_32(ld_32)     // data read from memory
 	);
-	// sole this tomorrow memwbreg
+	
 	mem_wb_pipeline_reg MEM_WB_REG(
 		    .clk(clk),
-	    //input [4:0]  rd_in,
+		.rd_in(rd_addr_out1),
 		    .alu_result_in(alu_result_out),
 		    .ld_data_in(ld_32),
-	    //input reg_write_in,
+		.reg_write_in(reg_write_out1),
 	//stalling condn is left ig
-	    //output reg [4:0]  rd_out,
+		.rd_out(rd),
 		    .alu_result_out(alu_result_out_memwbpipeline),
 		    .ld_data_out(ld_data_out),
-	    //output reg reg_write_out
+		.reg_write_out(reg_write_out2)
 	);
 	
 	writeback WB(
 		    .alu_result(alu_result_out_memwbpipeline),
 		    .ld_data(ld_data_out),
-		.mem_to_reg(mem_to_reg),
+		.mem_to_reg(mem_to_reg_out1),
 		    .wb_data(wb_data)
 	);
 	
@@ -324,4 +347,3 @@ module Riscv_Top (
 		    .rs1_data(rs1_data_in),
 		    .rs2_data(rs2_data_in)
 						);
-		
